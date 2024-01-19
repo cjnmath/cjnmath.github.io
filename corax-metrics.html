@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+<head>
+    <meta charset="utf-8">
+    <style>
+        #button-container {
+            top: 10px;
+            right: 10px;
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+        }
+        /* 添加自定义下拉框样式 */
+        #xAxis-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: #174117;
+            color: white;
+            padding: 5px 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 3px 0;
+            position: relative;
+            width: 100%; /* 设置宽度为100%以撑满父容器 */
+            text-align: center; /* 使下拉选项文字居中 */
+        }
+        #xAxis-select option {
+            text-align: center; /* 使下拉选项文字居中 */
+        }
+        #xAxis-select:hover {
+            background-color: #163d18;
+        }
+        #xAxis-select:focus {
+            outline: none;
+        }
+        #xAxis-select::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid #fff;
+        }
+
+        .dropdown-icon {
+            fill: white;
+            width: 1em;
+            height: 1em;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        #machine-buttons {
+            display: flex;
+            flex-direction: column;
+        }
+        #yAxis-buttons {
+            display: flex;
+            flex-direction: column;
+        }
+        /* styles.css */
+        .separator {
+            display: flex;
+            align-items: center; /* 添加此行以实现垂直居中 */
+            justify-content: center; /* 添加此行以实现水平居中 */
+            gap: 5px; /* 调整此处以控制文本与线条之间的间距 */
+            width: 100%; /* 添加此行以确保整个父容器宽度适应 */
+        }
+
+        .dashed-line {
+            height: 1px;
+            background-image: repeating-linear-gradient(to right, transparent, transparent 10px, #ccc 10px, #ccc 20px);
+            width: fit-content;
+            margin: 0 auto;
+        }
+
+        .separator-text {
+            text-align: center;
+            margin: 0 auto; /* 垂直居中（结合display:flex时生效） */
+        }
+
+        button {
+            margin: 1px 0;
+            padding: 1px 1px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #1b6426;
+            color: white;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button.active {
+            background-color: #050049;
+        }
+
+        #main {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0">
+
+<div id="main">
+    <!-- 创建一个用于显示图表的div -->
+    <div id="chartContainer" style="width: 100%; height: 100%;"></div>
+    <div id="button-container">
+        <a href="machine-info.html" target="_blank" style="text-decoration: none; color: #007bff; width: 100%; text-align: center;">
+            <span>点击查看测试硬件信息</span>
+        </a>
+        <div class="separator">
+            <div class="dashed-line"></div>
+            <p class="separator-text">select yAxis</p>
+        </div>
+        <div id="yAxis-buttons"></div>
+        <div class="separator">
+            <div class="dashed-line"></div>
+            <p class="separator-text">select xAxis</p>
+        </div>
+        <div>
+            <label for="xAxis-select"></label><select id="xAxis-select">
+                <!-- 下拉选项将由JavaScript动态填充 -->
+            </select>
+        </div>
+        <div class="separator">
+            <div class="dashed-line"></div>
+            <p class="separator-text">select machine</p>
+        </div>
+        <div id="machine-buttons"></div>
+    </div>
+</div>
+
+
+<script type="text/javascript" src="https://registry.npmmirror.com/echarts/5.4.3/files/dist/echarts.min.js"></script>
+<!-- Uncomment this line if you want to dataTool extension
+<script type="text/javascript" src="https://registry.npmmirror.com/echarts/5.4.3/files/dist/extension/dataTool.min.js"></script>
+-->
+<!-- Uncomment this line if you want to use gl extension
+<script type="text/javascript" src="https://registry.npmmirror.com/echarts-gl/2/files/dist/echarts-gl.min.js"></script>
+-->
+<script type="text/javascript"
+        src="https://registry.npmmirror.com/echarts-stat/latest/files/dist/ecStat.min.js"></script>
+
+<!-- Uncomment this line if you want to use map
+<script type="text/javascript" src="https://registry.npmmirror.com/echarts/4.9.0/files/map/js/china.js"></script>
+<script type="text/javascript" src="https://registry.npmmirror.com/echarts/4.9.0/files/map/js/world.js"></script>
+-->
+<!-- Uncomment these two lines if you want to use bmap extension
+<script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=YOUR_API_KEY"></script>
+<script type="text/javascript" src="https://registry.npmmirror.com/echarts/5.4.3/files/dist/extension/bmap.min.js"></script>
+-->
+
+<script type="text/javascript">
+    const dom = document.getElementById('chartContainer');
+    const myChart = echarts.init(dom, null, {
+        renderer: 'canvas',
+        useDirtyRect: false
+    });
+    // See https://github.com/ecomfe/echarts-stat
+    echarts.registerTransform(ecStat.transform.regression);
+
+	Promise.all([
+	  fetch('result.json'),
+	  fetch('x_index.json')
+	]).then(responses => Promise.all(responses.map(r => r.json())))
+	  .then(data => setDataToECharts(myChart, data[0], data[1]))
+	  .catch(error => console.error('Failed to load data', error));
+
+    class CoraxMetrics {
+        myChart;
+        raw_data;
+        xAxisInfo;
+
+        yAxisName; yAxisUnit; yAxisLabel;
+        xAxisKey;
+        envKey;
+        constructor(myChart, raw_data, xAxisInfo) {
+            this.myChart = myChart;
+            this.raw_data = raw_data;
+            this.xAxisInfo = xAxisInfo
+
+            this.envKey = Object.keys(raw_data)[0];
+            this.xAxisKey = Array.from(Object.keys(xAxisInfo))[0];
+        }
+
+        update() {
+            const option = this.getOption();
+            this.myChart.setOption(option);
+
+            setActiveButton('machine-buttons', this.envKey);
+            setActiveButton('yAxis-buttons', this.yAxisName);
+        }
+
+        getOption() {
+            const data = this.raw_data[this.envKey];
+            const xAxis = this.xAxisInfo[this.xAxisKey]
+            const xAxisIdx = xAxis["xAxisIdx"];
+            const xAxisName = this.xAxisKey;
+            const yAxisUnit = this.yAxisUnit
+            const yAxisLabel = this.yAxisLabel
+            const series = Object.entries(data).map(([kind, source]) => ({
+                name: `${kind}`,
+                type: 'line', show: false,
+                data: source.map(subArray => [subArray[xAxisIdx], subArray[0], subArray[1]]).sort((a1, a2) => {
+                    const a = a1[0];
+                    const b = a2[0];
+                    if (a < b) return -1;
+                    if (a > b) return 1;
+                    return 0;
+                }),
+                encode: {
+                    x: [0],
+                    y: [1]
+                },
+                showSymbol: false,
+                tooltip: {
+                    valueFormatter: function (value) {
+                        if (value === -1) return "failed"
+                        return yAxisLabel(value, -1);
+                    },
+                },
+            }))
+            return {
+                title: {
+                    text: 'Corax performance',
+                    subtext: `${this.envKey} - '${this.xAxisKey}' view`,
+                    link: 'https://github.com/Feysh-Group/corax-community',
+                    left: 'center'
+                },
+                tooltip: {
+                    order: 'valueDesc',
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                        label: {
+                            show: true
+                        },
+                    },
+                },
+                // grid: {
+                //     bottom: 80
+                // },
+                grid: {
+                    left: '5%', // 设置grid的左边距为0，这将使得坐标轴紧贴容器左侧
+                    right: '18%', // 右侧留白10%
+                    top: '10%',
+                    bottom: '5%',
+                },
+                calculable: true,
+                toolbox: {
+                    show: true,
+                    feature: {
+                        mark: {show: true},
+                        dataView: {show: true, readOnly: false},
+                        magicType: {show: true, type: ['line', 'bar']},
+                        restore: {show: true},
+                        saveAsImage: {show: true}
+                    },
+                    right: '10%'
+                },
+                dataZoom: [
+                    {
+                        show: false,
+                        start: -2,
+                        end: 100
+                    },
+                    {
+                        type: 'inside',
+                        start: -2,
+                        end: 100
+                    },
+                    {
+                        show: false,
+                        yAxisIndex: 0,
+                        filterMode: 'empty',
+                        width: 30,
+                        height: '80%',
+                        showDataShadow: true,
+                        left: '93%'
+                    }
+                ],
+                legend: {
+                    bottom: 5,
+                    formatter(name) {
+                        return `${name}`;
+                    },
+                },
+                xAxis: {
+                    name: xAxisName,
+                    splitLine: {
+                        lineStyle: {
+                            type: 'dashed'
+                        }
+                    },
+                    axisPointer: {
+                        snap: true,
+                        label: {
+                            formatter: function (params) {
+                                const seriesDataArr = params.seriesData.length ? params.seriesData : null;
+                                if (seriesDataArr === null) {
+                                    return "unknown"
+                                }
+                                const s = seriesDataArr.map((seriesData) => {
+                                    const data = seriesData.data;
+                                    return data !== null && data !== undefined ? `${data[2]}` : null
+                                });
+                                const f = s.filter((text) => text !== null)
+                                return (Array.from(new Set(s)).join(',\n') + `\n${xAxisName}: ${params.value}`);
+                            }
+                        }
+                    },
+                },
+                yAxis: {
+                    name: this.yAxisName,
+                    splitLine: {
+                        lineStyle: {
+                            type: 'dashed'
+                        }
+                    },
+                    axisLabel: {
+                        formatter: yAxisLabel
+                    },
+                    axisPointer: {
+                        snap: true
+                    }
+                },
+                series: [... series,],
+
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross',
+                    },
+                    // formatter: function (params) {
+                    //     const analysis_times = params.find(item => item.seriesName == "analysis_times")?.data[1]
+                    //     let tooltip = `<p>${params[0].axisValueLabel}</p> `;
+                    //     var result = [tooltip];
+                    //     params.forEach((item) => {
+                    //         result.push('<div style="display:flex;align-items:center;">');
+                    //         result.push('<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:' + item.color + '"></span>');
+                    //         result.push('<span style="flex:1;margin-right:5px;text-align:left">' + item.seriesName + '</span>');
+                    //         let yAxisValue = item.value[1]
+                    //         let itemValue = yAxisValue.toFixed(0) + "s";
+                    //         if (yAxisValue < 0) {
+                    //             itemValue += "&nbsp;&nbsp;" + "failed"
+                    //         } else {
+                    //             itemValue += "&nbsp;&nbsp;" + formatToPercentage(yAxisValue/analysis_times, 1).toString().padStart(5, " &nbsp;")
+                    //         }
+                    //         result.push('<span style="flex:1;text-align:right">' + itemValue + '</span>');
+                    //         result.push('</div>');
+                    //     });
+                    //     return result.join('');
+                    // },
+                    formatter: function (params) {
+                        let analysis_times = params.find(item => item.seriesName == "analysis_times")?.data[1];
+                        if (analysis_times <= 0) {
+                            analysis_times = 1
+                        }
+                        let tooltip = `<p>${params[0].axisValueLabel}</p> `;
+                        const result = [tooltip];
+
+                        params.forEach((item) => {
+                            let yAxisValue = item.value[1];
+                            result.push('<div style="display:flex;align-items:center;">');
+                            if (yAxisValue < 0) {
+                                result.push('<span style="color:#423e3e;">[failed]</span>');
+                            } else if (item.seriesName != "analysis_times") {
+                                let percentageValue = yAxisValue/analysis_times;
+                                let colorForPercent = getColorByPercentage(percentageValue);
+                                let paddedPercentage = (percentageValue * 100).toFixed(1).padStart(5, " ").replace(/ /g, "&nbsp;");
+                                result.push('<span style="color:' + colorForPercent + ';">[' + paddedPercentage + '%]</span>&nbsp;'); // Percentage text with colored font
+                            }
+
+                            result.push('<span style="display:inline-block;margin-right:5px;border-radius:10px;width:10px;height:10px;background-color:' + item.color + '"></span>');
+                            result.push('<span style="flex:1;margin-right:5px;text-align:left">' + item.seriesName + '</span>');
+
+                            let itemValue = yAxisLabel(yAxisValue, -1);
+
+                            result.push('<span style="flex:1;text-align:right">' + itemValue + '</span>');
+                            result.push('</div>');
+                        });
+
+                        return result.join('');
+                    },
+                },
+            };
+        }
+    }
+
+    function createYAxis(metrics, name, unit, yAxisLabel) {
+        if (metrics.yAxisName === undefined) {
+            metrics.yAxisName = name
+            metrics.yAxisUnit = unit
+            metrics.yAxisLabel = yAxisLabel
+        }
+        const yAxisButton = document.createElement('button');
+        yAxisButton.innerText = name;
+        yAxisButton.value = name;
+        yAxisButton.onclick = function () {
+            metrics.yAxisName = name
+            metrics.yAxisUnit = unit
+            metrics.yAxisLabel = yAxisLabel
+            metrics.update()
+        };
+        document.getElementById('yAxis-buttons').appendChild(yAxisButton);
+    }
+
+    function setDataToECharts(myChart, raw_data, xAxisInfo) {
+
+        // 设置初始option,使用setOption绘制图表
+        const metrics = new CoraxMetrics(myChart, raw_data, xAxisInfo)
+
+        createYAxis(metrics, "Time-Min", "s", function (value, index) { return (value / 60).toFixed(1) + ' min';})
+        createYAxis(metrics, "Time-Seconds", "s", function (value, index) { return value.toFixed(0) + ' s';})
+        createYAxis(metrics, "Memory-GB", " GB", function (value, index) { return value.toFixed(1) + ' GB';})
+        createYAxis(metrics, "Memory-MB", " GB", function (value, index) { return (value * 1024).toFixed(0) + ' MB';})
+        createYAxis(metrics, "Count", "", function (value, index) { return value.toFixed(0) + '';})
+
+        const xSelect = document.getElementById('xAxis-select');
+        for (const xAxisKey in xAxisInfo) {
+            if (xAxisInfo.hasOwnProperty(xAxisKey)) {
+                const option = document.createElement('option');
+                option.value = xAxisKey;
+                option.innerText = xAxisKey;
+                xSelect.addEventListener('change', function () {
+                    metrics.xAxisKey = this.value;
+                    metrics.update();
+                })
+                xSelect.appendChild(option);
+            }
+        }
+
+        for (const key in raw_data) {
+            if (raw_data.hasOwnProperty(key)) {
+                const button = document.createElement('button');
+                button.innerText = key;
+                button.value = key;
+                button.onclick = function () {
+                    metrics.envKey = this.value;
+                    metrics.update()
+                };
+                document.getElementById('machine-buttons').appendChild(button);
+            }
+        }
+
+        metrics.update()
+    }
+
+    function getColorByPercentage(percent) {
+        // 在HSL色彩模式下设置色相范围从绿色（120度）到红色（0度）
+        const hue = Math.max(120 - percent * 120, 0);
+
+        // 固定饱和度和亮度以保持颜色鲜艳且一致
+        const saturation = 0.6;
+        const lightness = 0.5;
+
+        // 转换回RGB格式以便在CSS中使用
+        return `hsl(${hue}, ${saturation * 100}%, ${lightness * 100}%)`;
+    }
+
+    // 设置当前按钮为激活状态，其他按钮为非激活状态
+    function setActiveButton(id, activeKey) {
+        const buttons = document.getElementById(id).getElementsByTagName('button');
+        for (let i = 0; i < buttons.length; i++) {
+            buttons[i].classList.remove('active');
+            if (buttons[i].value === activeKey) {
+                buttons[i].classList.add('active');
+            }
+        }
+    }
+
+    window.addEventListener('resize', myChart.resize);
+</script>
+</body>
+</html>

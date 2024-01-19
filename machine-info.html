@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Corax测试环境硬件信息</title>
+    <style>
+        h2 {
+            margin-bottom: 1rem;
+        }
+
+        table {
+            width: 50%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+    </style>
+    <script>
+        function loadFileContent(url, targetId) {
+            fetch(url)
+                .then(response => response.text())
+                .then(data => document.getElementById(targetId).innerText = data)
+                .catch(error => console.error(`Error loading file: ${error}`));
+        }
+
+        // 页面加载完成后开始加载各个文件内容
+        window.onload = function () {
+            loadFileContent('system-info/lscpu.txt', 'CpuReport');
+            loadFileContent('system-info/top.txt', 'topStatusReport');
+            loadFileContent('system-info/memory_stats.txt', 'memoryStatsReport');
+            loadFileContent('system-info/memory_usage.txt', 'memoryUsageReport');
+            loadFileContent('system-info/disk_usage.txt', 'diskUsageReport');
+        }
+    </script>
+</head>
+<body>
+
+<h1> Corax 测试环境及硬件信息</h1>
+<p><strong>CoraxJava 引擎版本：</strong>2.6</p>
+<p><strong>测试项目：</strong>16个</p>
+<p><strong>测试时间：</strong>2024年1月17日</p>
+
+<p><strong>测试使用的内存比例：</strong></p>
+
+<table>
+    <thead>
+    <tr>
+        <th>假设的物理内存大小</th>
+        <th>可用内存比例</th>
+        <th>对应 Xmx</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>4g</td>
+        <td>0.7</td>
+        <td>2800m</td>
+    </tr>
+    <tr>
+        <td>8g</td>
+        <td>0.7</td>
+        <td>5600m</td>
+    </tr>
+    <tr>
+        <td>16g</td>
+        <td>0.75</td>
+        <td>12g</td>
+    </tr>
+    <tr>
+        <td>24g</td>
+        <td>0.75</td>
+        <td>18g</td>
+    </tr>
+    <tr>
+        <td>32g</td>
+        <td>0.75</td>
+        <td>25g</td>
+    </tr>
+    <tr>
+        <td>64g</td>
+        <td>0.8</td>
+        <td>51g</td>
+    </tr>
+    </tbody>
+</table>
+
+<p><strong>要求：</strong>机器剩余可用内存 &ge; Xmx，否则不满足测试条件</p>
+
+<!-- 显示性能报告 -->
+<h2>CPU硬件信息(lscpu.txt)</h2>
+<pre id="CpuReport"></pre>
+
+<!-- 显示内存统计报告 -->
+<h2>内存统计报告 (memory_stats.txt)</h2>
+<pre id="memoryStatsReport"></pre>
+
+<!-- 显示内存使用情况报告 -->
+<h2>初始内存使用情况报告 (memory_usage.txt)</h2>
+<pre id="memoryUsageReport"></pre>
+
+<!-- 显示磁盘使用情况报告 -->
+<h2>初始磁盘使用情况报告 (disk_usage.txt)</h2>
+<pre id="diskUsageReport"></pre>
+
+<h2>初始进程状态 (top.txt)</h2>
+<pre id="topStatusReport"></pre>
+</body>
+</html>

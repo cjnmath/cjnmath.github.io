@@ -1,0 +1,50 @@
+{
+    "applicationClasses": {
+        "xAxisIdx": 2
+    },
+    "libraryClasses": {
+        "xAxisIdx": 3
+    },
+    "phantomClasses": {
+        "xAxisIdx": 4
+    },
+    "applicationMethods": {
+        "xAxisIdx": 5
+    },
+    "libraryMethods": {
+        "xAxisIdx": 6
+    },
+    "applicationMethodsHaveBody": {
+        "xAxisIdx": 7
+    },
+    "libraryMethodsHaveBody": {
+        "xAxisIdx": 8
+    },
+    "analyzedFiles": {
+        "xAxisIdx": 9
+    },
+    "appJavaFileCount": {
+        "xAxisIdx": 10
+    },
+    "appJavaLineCount": {
+        "xAxisIdx": 11
+    },
+    "totalFileNum": {
+        "xAxisIdx": 12
+    },
+    "totalSourceFileNum": {
+        "xAxisIdx": 13
+    },
+    "analyzedClasses": {
+        "xAxisIdx": 14
+    },
+    "analyzedMethodEntries": {
+        "xAxisIdx": 15
+    },
+    "analyzedApplicationMethods": {
+        "xAxisIdx": 16
+    },
+    "analyzedLibraryMethods": {
+        "xAxisIdx": 17
+    }
+}
